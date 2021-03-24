@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "klogpy"
+version = "0.1.0"
+description = "Python implementation of Klog text format"
+authors = ["Nick Yu <nickyu42@gmail.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+parsy = { git = "https://github.com/python-parsy/parsy", rev = "4d8a96b" }
+
+[tool.poetry.dev-dependencies]
+flake8 = "^3.9.0"
+mypy = "^0.812"
+autopep8 = "^1.5.6"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
