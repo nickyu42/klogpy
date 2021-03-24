@@ -13,7 +13,7 @@ from parsy import Parser, fail, generate, regex, seq, string, whitespace
 from src.syntax import Duration, Entry, Range, Record, ShouldTotal
 
 TAG_REGEX = re.compile(r'#\S+')
-EOL = regex(r'\w*\n')
+EOL = regex(r'\s*\n')
 
 
 @cache
@@ -160,15 +160,7 @@ def record():
     )
 
 
-if __name__ == '__main__':
-    test = """\
-2020-10-10 (1h!)
-I went to the grocery store #fun
-and I bought #apple_pie
-    12h foo bar
-    12:00 - 13:00
-    ??? - ??? test
-"""
-    from pprint import pprint
-
-    pprint(record.parse(test))
+def parse(inp: str) -> list[Record]:
+    padded_record = EOL.many() >> record << EOL.many()
+    records = padded_record.many().parse(inp)
+    return records

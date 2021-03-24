@@ -58,4 +58,3 @@ class Record:
 
     def total_time(self):
         return sum(e.time.total_minutes for e in self.entries)
-
