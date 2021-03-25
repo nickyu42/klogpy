@@ -4,6 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
+from src import __version__
 from src.syntax import Record
 
 CONFIG_DIR = Path.home() / '.klogger'
@@ -13,10 +14,10 @@ RECORD_STORE = CONFIG_DIR / 'entries.pickle'
 
 @dataclass
 class RecordStore:
-    VERSION = '0.1.0'
+    VERSION = __version__
     _records: list[Record] = field(default_factory=list)
 
-    # TODO sensible value on init
+    # TODO: sensible value on init
     _current_record_index: int = field(default=0)
 
     @property

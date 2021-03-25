@@ -3,12 +3,8 @@ import parsy
 
 import src.parser as parser
 import src.syntax as syntax
-from src.config import get_local_config, CONFIG_DIR
-
-
-@click.group()
-def klg():
-    pass
+from src import __version__
+from src.config import CONFIG_DIR, get_local_config
 
 
 @click.command()
@@ -35,8 +31,7 @@ def entry(message, val):
             f'Created a new config in {CONFIG_DIR.resolve()}', fg='green')
         return
 
-    current_record = conf._records[conf._current_record_index]
-    current_record.entries.append(e)
+    conf.current_record.entries.append(e)
     conf.store_pending()
 
     click.echo(f'Added {e.serialize()}')
@@ -51,15 +46,15 @@ def _list():
         click.secho(
             f'Created a new config in {CONFIG_DIR.resolve()}', fg='green')
     else:
-        if len(conf._records) == 0:
+        if conf.current_record is None:
             click.echo('Currently no pending records')
             return
 
-        for e in conf._records[conf._current_record_index].entries:
+        for e in conf.current_record.entries:
             click.echo(e.serialize())
 
 
-@click.command('done')
+@click.command()
 @click.option('-m', '--message', type=str)
 def done(message):
     """Push all pending entries"""
@@ -76,6 +71,12 @@ def done(message):
     else:
         click.secho('Successfully added record\n', fg='green')
         click.echo(pushed.serialize())
+
+
+@click.group()
+@click.version_option(__version__)
+def klg():
+    pass
 
 
 klg.add_command(entry)
