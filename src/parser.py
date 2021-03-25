@@ -10,7 +10,7 @@ from functools import cache
 
 from parsy import Parser, fail, generate, regex, seq, string, whitespace
 
-from src.syntax import Duration, Entry, Range, Record, ShouldTotal
+from .syntax import Duration, Entry, Range, Record, ShouldTotal
 
 TAG_REGEX = re.compile(r'#\S+')
 EOL = regex(r'\s*\n')
@@ -105,9 +105,9 @@ def time_range():
 
     # Check that, if start and end are time values, that they are in the correct order
     if (
-        isinstance(start, tuple) and
-        isinstance(end, tuple) and
-        start[1] > end[1]
+        isinstance(start, tuple)
+        and isinstance(end, tuple)
+        and start[1] > end[1]
     ):
         return fail('Time in range must be in chronological order')
 
@@ -138,10 +138,10 @@ def record():
     d = yield date
 
     prop = yield (
-        whitespace >>
-        string('(') >>
-        properties <<
-        string(')')
+        whitespace
+        >> string('(')
+        >> properties
+        << string(')')
     ).optional()
 
     yield EOL

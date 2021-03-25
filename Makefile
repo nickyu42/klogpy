@@ -1,9 +1,9 @@
 .PHONY: all
-all: lint style
+all: style lint
 
 .PHONY: lint
 lint:
-	flake8
+	flakehell lint src
 
 .PHONY: style
 style:
