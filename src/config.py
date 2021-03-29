@@ -1,6 +1,5 @@
 import pickle
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -9,32 +8,64 @@ from src.syntax import Record
 
 CONFIG_DIR = Path.home() / '.klogger'
 KLOG_FILE = CONFIG_DIR / 'time.klog'
-RECORD_STORE = CONFIG_DIR / 'entries.pickle'
+RECORD_STORE = CONFIG_DIR / 'records.pickle'
 
 
 @dataclass
 class RecordStore:
     VERSION = __version__
-    _records: list[Record] = field(default_factory=list)
+    records: list[Record] = field(default_factory=list)
 
     # TODO: sensible value on init
-    _current_record_index: int = field(default=0)
+    current_record_index: Optional[int] = field(default=None)
 
     @property
     def current_record(self) -> Optional[Record]:
-        return self._records[self._current_record_index]
+        if self.current_record_index is None:
+            return None
 
-    def store_pending(self):
+        return self.records[self.current_record_index]
+
+    def commit(self):
+        """Add changes to this object, to the record store. """
         with RECORD_STORE.open('wb') as f:
             pickle.dump(self, f)
 
-    def push_record(self) -> Record:
+    def write_selected(self) -> Record:
+        """
+        Write the currently selected record to the Klog file.
+
+        :return: The written record.
+        """
+        current_record = self.current_record
+        if current_record is None:
+            raise ValueError('The current record store is empty')
+
         with KLOG_FILE.open('a') as f:
-            current_record = self._records[self._current_record_index]
             f.write(current_record.serialize())
             f.write('\n')
 
-            return current_record
+        return current_record
+
+    def push_record(self, record: Record):
+        self.records.append(record)
+
+        if self.current_record_index is None:
+            self.current_record_index = 0
+            return
+
+        self.current_record_index += 1
+
+    def pop_record(self, index: int):
+        if index < 0 or index >= len(self.records):
+            raise IndexError(f'There is no record at index {index}')
+
+        self.records.pop(index)
+
+        if len(self.records) == 0:
+            self.current_record_index = None
+        else:
+            self.current_record_index -= 1
 
 
 def get_local_config(should_create: bool = False) -> tuple[bool, Optional[RecordStore]]:
@@ -45,16 +76,13 @@ def get_local_config(should_create: bool = False) -> tuple[bool, Optional[Record
         CONFIG_DIR.mkdir()
         RECORD_STORE.touch()
         KLOG_FILE.touch()
-
-        # TODO: don't create default record
-        records = [Record(datetime.today())]
-        entry_store = RecordStore(records)
+        entry_store = RecordStore()
 
         with RECORD_STORE.open('wb') as f:
             pickle.dump(entry_store, f)
 
         created = True
-    elif CONFIG_DIR.exists():
+    elif CONFIG_DIR.exists() and RECORD_STORE.exists():
         with RECORD_STORE.open('rb') as f:
             entry_store = pickle.load(f)
 

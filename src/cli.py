@@ -1,17 +1,47 @@
+from datetime import datetime
+
 import click
 import parsy
 
 import src.parser as parser
 import src.syntax as syntax
 from src import __version__
-from src.config import CONFIG_DIR, get_local_config
+from src.config import CONFIG_DIR, RECORD_STORE, get_local_config
 
 
-@click.command()
+@click.command('init')
+def _init():
+    """Initialize a new record store if it does not exist"""
+    created, _ = get_local_config(True)
+
+    if created:
+        click.secho(
+            f'Created a new record store in {CONFIG_DIR.resolve()}', fg='green'
+        )
+    else:
+        click.echo(f'Record store in {CONFIG_DIR.resolve()} already exists')
+
+
+@click.command('entry')
 @click.option('-m', '--message', type=str)
+@click.option('-l', '--list', 'should_list', is_flag=True)
 @click.argument('val', type=str)
-def entry(message, val):
+def _entry(message, should_list, val):
     """Manipulate entries for the active day"""
+    if should_list:
+        _, conf = get_local_config()
+
+        if conf is None:
+            click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
+            return
+
+        if conf.current_record is None:
+            click.echo('Currently no pending records')
+            return
+
+        for e in conf.current_record.entries:
+            click.echo(e.serialize())
+
     try:
         time_val = (parser.time_range | parser.duration).parse(val)
     except parsy.ParseError:
@@ -28,49 +58,81 @@ def entry(message, val):
 
     if created:
         click.secho(
-            f'Created a new config in {CONFIG_DIR.resolve()}', fg='green')
+            f'Created a new record store in {CONFIG_DIR.resolve()}', fg='green')
         return
 
     conf.current_record.entries.append(e)
-    conf.store_pending()
+    conf.commit()
 
     click.echo(f'Added {e.serialize()}')
 
 
-@click.command('list')
-def _list():
-    """List all pending entries"""
-    created, conf = get_local_config(should_create=True)
+@click.group('record', invoke_without_command=True)
+@click.pass_context
+@click.option('-l', '--list', 'should_list', is_flag=True)
+def _record(ctx, should_list: bool):
+    """Create or modify records"""
+    if should_list:
+        _, conf = get_local_config()
 
-    if created:
-        click.secho(
-            f'Created a new config in {CONFIG_DIR.resolve()}', fg='green')
-    else:
-        if conf.current_record is None:
-            click.echo('Currently no pending records')
+        if conf is None:
+            click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
             return
 
-        for e in conf.current_record.entries:
-            click.echo(e.serialize())
+        for i, record in enumerate(conf.records):
+            if i == conf.current_record_index:
+                click.secho('* ', nl=False, fg='green')
+            else:
+                click.echo('  ', nl=False)
+
+            click.echo('  '.join(record.serialize().split('\n')))
 
 
-@click.command()
-@click.option('-m', '--message', type=str)
-def done(message):
-    """Push all pending entries"""
+@click.command('finalize')
+@click.option('-m', '--message', multiple=True)
+@click.option('-e', '--edit', is_flag=True)
+def _finalize(message, edit):
+    """Write the current selected record to the Klog file"""
     _, conf = get_local_config()
 
     if conf is None:
-        click.secho(f'{CONFIG_DIR.name} does not exist', fg='red')
+        click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
+        return
+
+    conf.current_record.summary = [m.strip() for m in message]
+
+    if edit:
+        # Add previous message in text buffer if present
+        text = click.edit('\n'.join(conf.current_record.summary))
+
+        # Remove empty lines
+        conf.current_record.summary = [line for line in text.split('\n') if line != '']
 
     try:
-        conf.current_record.summary = [message.strip()]
-        pushed = conf.push_record()
+        pushed = conf.write_selected()
     except Exception as e:
         click.secho(str(e), fg='red')
     else:
         click.secho('Successfully added record\n', fg='green')
         click.echo(pushed.serialize())
+
+
+@click.command('new')
+def _new():
+    """Create a new record for today"""
+    rec = syntax.Record(datetime.today())
+    _, conf = get_local_config()
+
+    if conf is None:
+        click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
+        return
+
+    conf.push_record(rec)
+    conf.commit()
+
+
+_record.add_command(_finalize)
+_record.add_command(_new)
 
 
 @click.group()
@@ -79,6 +141,6 @@ def klg():
     pass
 
 
-klg.add_command(entry)
-klg.add_command(_list)
-klg.add_command(done)
+klg.add_command(_init)
+klg.add_command(_entry)
+klg.add_command(_record)

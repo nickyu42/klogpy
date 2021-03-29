@@ -78,7 +78,7 @@ class Entry(Serializable):
     def serialize(self) -> str:
         s = self.time.serialize()
         if self.description is not None:
-            s += self.description
+            s += f' {self.description}'
 
         return s
 
