@@ -135,7 +135,8 @@ def _finalize(message, edit):
         text = click.edit('\n'.join(conf.current_record.summary))
 
         # Remove empty lines
-        conf.current_record.summary = [line for line in text.split('\n') if line != '']
+        conf.current_record.summary = [
+            line for line in text.split('\n') if line != '']
 
     try:
         pushed = conf.write_selected()

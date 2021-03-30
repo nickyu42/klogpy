@@ -7,7 +7,7 @@ lint:
 
 PHONY += style
 style:
-	autopep8 -r -i src
+	autopep8 -r --max-line-length 119 -i src
 
 PHONY += test
 test:
