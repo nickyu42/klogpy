@@ -22,25 +22,44 @@ def _init():
         click.echo(f'Record store in {CONFIG_DIR.resolve()} already exists')
 
 
-@click.command('entry')
-@click.option('-m', '--message', type=str)
-@click.option('-l', '--list', 'should_list', is_flag=True)
-@click.argument('val', type=str)
-def _entry(message, should_list, val):
-    """Manipulate entries for the active day"""
+@click.command('entry', short_help='Manipulate entries for the active day')
+@click.pass_context
+@click.option('-m', '--message', help='Add a summary to the record')
+@click.option('-l', '--list', 'should_list', is_flag=True, help='Print the entries of the currently selected record')
+@click.argument('val', type=str, required=False, metavar='[ENTRY]')
+def _entry(ctx, message, should_list, val):
+    """Manipulate entries for the active day
+
+    \b
+    VAL must be a time or range entry
+    Some examples of entries:
+
+    \b
+    - "2h30m"
+    - "10am - 12pm"
+    """
     if should_list:
         _, conf = get_local_config()
 
         if conf is None:
-            click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
-            return
+            click.secho(
+                f'Record store ({RECORD_STORE}) does not exist, or file is corrupt',
+                fg='red'
+            )
+            ctx.exit()
 
         if conf.current_record is None:
             click.echo('Currently no pending records')
-            return
+            ctx.exit()
 
         for e in conf.current_record.entries:
             click.echo(e.serialize())
+
+        ctx.exit()
+
+    if val is None:
+        click.echo(ctx.get_help(), color=ctx.color)
+        ctx.exit()
 
     try:
         time_val = (parser.time_range | parser.duration).parse(val)
@@ -69,14 +88,17 @@ def _entry(message, should_list, val):
 
 @click.group('record', invoke_without_command=True)
 @click.pass_context
-@click.option('-l', '--list', 'should_list', is_flag=True)
+@click.option('-l', '--list', 'should_list', is_flag=True, help='List all records in the record store')
 def _record(ctx, should_list: bool):
     """Create or modify records"""
     if should_list:
         _, conf = get_local_config()
 
         if conf is None:
-            click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
+            click.secho(
+                f'Record store ({RECORD_STORE}) does not exist, or file is corrupt',
+                fg='red'
+            )
             return
 
         for i, record in enumerate(conf.records):
@@ -87,6 +109,12 @@ def _record(ctx, should_list: bool):
 
             click.echo('  '.join(record.serialize().split('\n')))
 
+        return
+
+    if ctx.invoked_subcommand is None:
+        click.echo(ctx.get_help(), color=ctx.color)
+        ctx.exit()
+
 
 @click.command('finalize')
 @click.option('-m', '--message', multiple=True)
@@ -96,7 +124,8 @@ def _finalize(message, edit):
     _, conf = get_local_config()
 
     if conf is None:
-        click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
+        click.secho(
+            f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
         return
 
     conf.current_record.summary = [m.strip() for m in message]
@@ -124,7 +153,8 @@ def _new():
     _, conf = get_local_config()
 
     if conf is None:
-        click.secho(f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
+        click.secho(
+            f'Record store ({RECORD_STORE}) does not exist, or file is corrupt', fg='red')
         return
 
     conf.push_record(rec)
