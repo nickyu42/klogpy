@@ -55,7 +55,7 @@ class Range(Time, Serializable):
 
         if self.start is not None:
             o, t = self.start
-            builder.append(f'{"<" if o else ""}{t.hour}:{t.minute}')
+            builder.append(f'{"<" if o else ""}{t.hour:02}:{t.minute:02}')
         else:
             builder.append('?')
 
@@ -63,7 +63,7 @@ class Range(Time, Serializable):
 
         if self.end is not None:
             o, t = self.end
-            builder.append(f'{t.hour}:{t.minute}{">" if o else ""}')
+            builder.append(f'{t.hour:02}:{t.minute:02}{">" if o else ""}')
         else:
             builder.append('?')
 

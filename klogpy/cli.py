@@ -3,10 +3,10 @@ from datetime import datetime
 import click
 import parsy
 
-import src.parser as parser
-import src.syntax as syntax
-from src import __version__
-from src.config import CONFIG_DIR, RECORD_STORE, get_local_config
+import klogpy.parser as parser
+import klogpy.syntax as syntax
+from klogpy import __version__
+from klogpy.config import CONFIG_DIR, RECORD_STORE, get_local_config
 
 
 @click.command('init')
@@ -36,7 +36,7 @@ def _entry(ctx, message, should_list, val):
 
     \b
     - "2h30m"
-    - "10am - 12pm"
+    - "10:00am - 12:00pm"
     """
     if should_list:
         _, conf = get_local_config()

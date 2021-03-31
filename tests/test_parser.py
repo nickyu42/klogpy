@@ -3,7 +3,7 @@ import datetime
 import pytest
 from parsy import ParseError
 
-from ..parser import date
+from klogpy.parser import date
 
 test_dates = (
     ('2020-02-10', datetime.date(2020, 2, 10)),

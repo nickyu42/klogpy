@@ -3,8 +3,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from src import __version__
-from src.syntax import Record
+from klogpy import __version__
+from klogpy.syntax import Record
 
 CONFIG_DIR = Path.home() / '.klogger'
 KLOG_FILE = CONFIG_DIR / 'time.klog'
