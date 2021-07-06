@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "klogpy"
-version = "0.1.0"
+version = "0.1.1"
 description = "Python implementation of klog format for time tracking"
 authors = ["Nick Yu <nickyu42@gmail.com>"]
 license = "MIT"
@@ -15,7 +15,7 @@ klogpy = "klogpy.cli:klg"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-parsy = { git = "https://github.com/python-parsy/parsy", rev = "4d8a96b" }
+parsy = "^1.3"
 click = "^7.1.2"
 colorama = "^0.4.4"
 
@@ -26,6 +26,8 @@ pytest = "^6.2.2"
 pytest-cov = "^2.11.1"
 
 [tool.flakehell]
+# Issue in flakehell, see #10
+extended_default_ignore=[]
 format = "colored"
 show_source = true
 max_line_length = 120

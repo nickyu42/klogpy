@@ -8,7 +8,7 @@ import re
 from dataclasses import asdict
 from functools import cache
 
-from parsy import Parser, fail, generate, regex, seq, string, whitespace
+from parsy import Parser, Result, fail, generate, regex, seq, string, whitespace
 
 from .syntax import Duration, Entry, Range, Record, ShouldTotal
 
@@ -27,7 +27,20 @@ def c_regex(exp, flags=0, group=0) -> Parser:
 
     :return: parsy.Parser object.
     """
-    return regex(exp, flags, group)
+    if isinstance(exp, (str, bytes)):
+        exp = re.compile(exp, flags)
+    if isinstance(group, (str, int)):
+        group = (group,)
+
+    @Parser
+    def regex_parser(stream, index):
+        match = exp.match(stream, index)
+        if match:
+            return Result.success(match.end(), match.group(*group))
+        else:
+            return Result.failure(index, exp.pattern)
+
+    return regex_parser
 
 
 @generate
