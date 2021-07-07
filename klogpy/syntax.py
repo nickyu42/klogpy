@@ -42,6 +42,7 @@ class Duration(Time, Serializable):
 
 @dataclass
 class Range(Time, Serializable):
+    # TODO: convert this to datetime.datetime
     start: Optional[tuple[bool, datetime.time]]
     end: Optional[tuple[bool, datetime.time]]
 
@@ -99,7 +100,7 @@ class Record(Serializable):
     tags: list[str] = field(default_factory=list)
 
     def total_time(self):
-        return sum(e.time.total_minutes for e in self.entries)
+        return sum(e.time.total_minutes for e in self.entries if e.time.total_minutes is not None)
 
     def serialize(self) -> str:
         builder = [self.date.strftime('%Y-%m-%d')]
@@ -118,3 +119,13 @@ class Record(Serializable):
             builder.append(f'    {e.serialize()}\n')
 
         return ''.join(builder)
+
+    def serialize_dict(self) -> dict:
+        return {
+            'date': self.date.strftime('%Y-%m-%d'),
+            'properties': ','.join(p.serialize() for p in self.properties),
+            'summary': '\n'.join(self.summary),
+            'entries': '\n'.join(e.serialize() for e in self.entries),
+            'tags': ','.join(self.tags),
+            'total_minutes': self.total_time(),
+        }

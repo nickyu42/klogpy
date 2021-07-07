@@ -65,8 +65,8 @@ def duration():
 
     return Duration(
         is_neg=sign is not None and sign == '-',
-        hours=0 if hours is None else hours,
-        minutes=0 if minutes is None else minutes,
+        hours=0 if hours is None else int(hours),
+        minutes=0 if minutes is None else int(minutes),
     )
 
 
@@ -166,7 +166,7 @@ def record():
 
     return Record(
         date=d,
-        properties=[prop],
+        properties=[prop] if prop is not None else [],
         summary=summary,
         entries=entries,
         tags=tags,

@@ -1,4 +1,6 @@
 from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 import click
 import parsy
@@ -7,6 +9,7 @@ import klogpy.parser as parser
 import klogpy.syntax as syntax
 from klogpy import __version__
 from klogpy.config import CONFIG_DIR, RECORD_STORE, get_local_config
+from klogpy.convert import convert_to_csv
 
 
 @click.command('init')
@@ -20,6 +23,27 @@ def _init():
         )
     else:
         click.echo(f'Record store in {CONFIG_DIR.resolve()} already exists')
+
+
+@click.command('convert')
+@click.option('-t', '--output-type', type=click.Choice(('csv',)), default='csv', help='The format to output to')
+@click.option('-o', '--output-file', type=Path,
+              help='The file to output write to, defaults to same directory as input_file')
+@click.argument('input_file', type=Path)
+def _convert(output_type: str, output_file: Optional[Path], input_file: Path):
+    """Converts a Klog file to other file formats"""
+    if output_file is None:
+        out_dir = input_file.parent
+        output_file = out_dir / input_file.stem
+
+    with input_file.open('r') as f:
+        records = parser.parse(f.read())
+
+    if output_type == 'csv':
+        output_file = output_file.parent / f'{output_file.name}.csv'
+        convert_to_csv(records, output_file)
+
+    click.secho(f'Converted {input_file.name} to {output_file}')
 
 
 @click.command('entry', short_help='Manipulate entries for the active day')
@@ -173,5 +197,6 @@ def klg():
 
 
 klg.add_command(_init)
+klg.add_command(_convert)
 klg.add_command(_entry)
 klg.add_command(_record)
